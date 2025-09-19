@@ -41,6 +41,27 @@ if (isset($_GET['action'])) {
             file_put_contents($file_path, $content, FILE_APPEND | LOCK_EX);
             echo json_encode(['status' => 'success']);
             exit;
+        case 'runCCode':
+            $data = json_decode(file_get_contents('php://input'), true);
+            $code = $data['code'] ?? '';
+            $tmpDir = sys_get_temp_dir();
+            $cFile = tempnam($tmpDir, 'cprog_') . '.c';
+            $exeFile = tempnam($tmpDir, 'cprog_');
+            file_put_contents($cFile, $code);
+            $compileCmd = "gcc \"$cFile\" -o \"$exeFile\" 2>&1";
+            $compileOutput = shell_exec($compileCmd);
+            if ($compileOutput) {
+                $output = "Compilation error:\n" . $compileOutput;
+            } else {
+                $runCmd = "$exeFile";
+                $runOutput = shell_exec($runCmd . " 2>&1");
+                $output = $runOutput;
+            }
+            // Clean up
+            @unlink($cFile);
+            @unlink($exeFile);
+            echo json_encode(['output' => $output]);
+            exit;
     }
 }
 ?>
@@ -150,10 +171,16 @@ if (isset($_GET['action'])) {
         <button id="loginBtn" class="primary-btn">🔓 Login</button>
     </div>
     <div class="container" id="essayBox" style="margin-top:2rem; display:none;">
-        <h2>📝 Write here</h2>
-        <textarea id="bigText" rows="10"></textarea>
-        <button id="saveTextBtn" class="primary-btn">💾 Save Text</button>
-        <div id="saveTextResult" style="margin-top:1rem; text-align:center;"></div>
+        <h2>🖥️ C Code Editor</h2>
+        <textarea id="codeEditor" rows="20" spellcheck="false">// Write your C code here
+#include <stdio.h>
+int main() {
+    printf("Hello, world!\\n");
+    return 0;
+}
+</textarea>
+        <button id="runCodeBtn" class="primary-btn">▶️ Run Code</button>
+        <div id="runCodeResult" style="margin-top:1rem; text-align:left; white-space:pre; background:#f8f8f8; border-radius:8px; padding:1rem;"></div>
     </div>
     <script>
         let studentName = "";
@@ -164,9 +191,21 @@ if (isset($_GET['action'])) {
         const nameInput = document.getElementById('nameInput');
         const loginBox = document.getElementById('loginBox');
         const essayBox = document.getElementById('essayBox');
-        const bigText = document.getElementById('bigText');
-        const saveTextBtn = document.getElementById('saveTextBtn');
-        const saveTextResult = document.getElementById('saveTextResult');
+        const codeEditor = document.getElementById('codeEditor');
+        const runCodeBtn = document.getElementById('runCodeBtn');
+        const runCodeResult = document.getElementById('runCodeResult');
+
+        runCodeBtn.addEventListener('click', async () => {
+            const code = codeEditor.value;
+            runCodeResult.textContent = "⏳ Running...";
+            const res = await fetch(`?action=runCCode`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await res.json();
+            runCodeResult.textContent = data.output || "❌ Error running code.";
+        });
 
         // Auto-display name as you type the ID
         idInput.addEventListener('input', async () => {
@@ -208,27 +247,6 @@ if (isset($_GET['action'])) {
             studentName = name;
             loginBox.style.display = 'none';
             essayBox.style.display = 'block';
-        });
-
-        // Save text to server as [ID].txt
-        saveTextBtn.addEventListener('click', async () => {
-            const text = bigText.value.trim();
-            if (!text) {
-                saveTextResult.textContent = "Please write something before saving.";
-                return;
-            }
-            const res = await fetch(`?action=saveEssayText`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: studentId, name: studentName, text })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                saveTextResult.textContent = "✅ Saved successfully!";
-                bigText.value = "";
-            } else {
-                saveTextResult.textContent = "❌ Error saving text.";
-            }
         });
 
         // Log tab leave event
