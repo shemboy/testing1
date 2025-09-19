@@ -1,10 +1,13 @@
 <?php
-$students = [
-    '2024001' => 'John Doe',
-    '2024002' => 'Jane Smith',
-    '2024003' => 'Peter Jones',
-    // Add more student IDs and names here
-];
+// Read students from students.txt (same format as reg.php)
+$students = [];
+if (file_exists('students.txt')) {
+    $lines = file('students.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        list($id, $last, $first) = explode('|', $line);
+        $students[$id] = "$first $last";
+    }
+}
 
 session_start();
 header('Content-Type: text/html');
