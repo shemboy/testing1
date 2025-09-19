@@ -155,11 +155,7 @@ if (isset($_GET['action'])) {
             <button id="registerBtn" class="primary-btn">Register</button>
             <div id="regResult"></div>
         </div>
-        <div id="welcomeScreen">
-            <p>Please enter your Student ID number:</p>
-            <input type="text" id="idInput" placeholder="Enter your Student ID" />
-            <input type="text" id="nameInput" placeholder="Name will appear here" readonly style="display:none;" />
-        </div>
+        
     </div>
     <script>
         const registrationScreen = document.getElementById('registrationScreen');
