@@ -72,7 +72,7 @@ if (isset($_GET['action'])) {
         }
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 1200px; /* Increased from 600px */
             background: #ffffff;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -110,9 +110,10 @@ if (isset($_GET['action'])) {
             border-radius: 8px;
             box-sizing: border-box;
             resize: vertical;
-            min-height: 180px;
+            min-height: 400px; /* Increased height */
             padding: 1rem;
             border: 2px solid #ddd;
+            max-width: 100%; /* Ensure it fills the container */
         }
         .primary-btn {
             background: #3498db;
